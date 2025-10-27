@@ -49,6 +49,13 @@ under `⋯` (More actions) you can click `Pull` to get the latest changes.
 
 Note: you should *not* press `Sync`, since that will try to upload your changes to the assignment files to GitHub (you don't have the rights to do this).
 
+Note: you should not need to build mathlib files on your computer. If you notice, try the following steps:
+* Close VSCode (if it is open).
+* Open the course folder in VS Code and open some Lean file in the course.
+* Press `∀ > Project Actions... > Fetch Mathlib Build Cache` and wait for the cache to download.
+* Wait until the command finishes with downloading and decompressing. If you get an error, run it again.
+* You might have to restart the Lean file, and then Lean should be compiling your file in less than a minute.
+
 <!-- We might at some point update the version of Lean for the repository (we will tell you when this happens). In that case, after running `git pull` you have to get the new Mathlib cache. In this case, *do not* restart a Lean file (which will prompt Lean to rebuild Mathlib on your laptop).
 Instead press `∀ > Project Actions... > Fetch Mathlib Build Cache` and wait for the cache to download.
 After it has finished, you might have to restart the Lean file, and then Lean should be compiling your file in less than a minute. -->
