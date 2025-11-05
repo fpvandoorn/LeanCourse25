@@ -39,18 +39,23 @@ Last time we saw:
   - `gcongr` applies monotonicity of functions
 -/
 
+#leansearch "abs_add."
+
+
 example (x : ℝ) : (Real.sin x) ^ 2 ≤ 1 := by
-  sorry
+  exact sin_sq_le_one x
   done
 
+#check Complex.exp_add_pi_mul_I
 example : Complex.exp (Complex.I * π) + 1 = 0 := by
-  sorry
+  rw [mul_comm, Complex.exp_pi_mul_I]
+  ring
   done
 
 
 example {a b c d : ℝ} (h₀ : 0 < b) (h₁ : b < a) (h₂ : c ≤ d) :
     1 / a + Real.exp c ≤ 1 / b + Real.exp d := by
-  sorry
+  gcongr
   done
 
 /-
@@ -61,7 +66,9 @@ example {a b c d : ℝ} (h₀ : 0 < b) (h₁ : b < a) (h₂ : c ≤ d) :
 /- Remark: for equalities, you should use `congr` instead of `gcongr` -/
 
 example (h : a = b) : c - exp b = c - exp a := by
-  sorry
+  congr
+  symm
+  exact h
   done
 
 
@@ -71,7 +78,9 @@ example (h : a = b) : c - exp b = c - exp a := by
 
 example {a b c d : ℝ} (h₀ : 0 < b) (h₁ : b < a) (h₂ : c ≤ d) :
     1 / a + exp c ≤ exp d + 1 / b := by
-  sorry
+  grw [← h₁]
+  grw [← h₂]
+  rw[add_comm]
   done
 
 
@@ -85,27 +94,31 @@ In contrast: `rw` can *only* rewrite with `=` or `↔`.
 #check 8 ≡ 3 [ZMOD 5]
 
 example {a b n : ℤ} (h : a ≡ b [ZMOD n]) : a ^ 2 ≡ b ^ 2 [ZMOD n] := by
+--  gcongr
   grw [h]
 
 
 
 example {a b c d n : ℤ} (h : a ≡ b [ZMOD n]) (h' : c ≡ d [ZMOD n]) :
     a ^ 2 * c ≡ b ^ 2 * d [ZMOD n] := by
-  sorry
+  grw[h,h']
   done
 
 
 
 example {a b c : ℤ} (h₁ : a ∣ b) (h₂ : b ∣ a ^ 2 * c) :
     a ∣ b ^ 2 * c := by
-  sorry
+  grw[h₁] at *
+  assumption
   done
 
 
 
 example (f g : ℝ → ℝ) (h : ∀ x : ℝ, f x ≤ g x)
     (h₂ : g a + g b ≤ 5) : f a + f b ≤ 5 := by
-  sorry
+  grw[h]
+  grw[h]
+  assumption
   done
 
 
@@ -203,16 +216,29 @@ There are various ways to prove the following lemmas:
 * give a direct proof: `⟨xs, xt⟩`
 -/
 example (hxs : x ∈ s) (hxt : x ∈ t) : x ∈ s ∩ t := by
-  sorry
-  done
+rw [mem_inter_iff x s t]
+constructor
+· assumption
+· assumption
+done
+
+
 
 example (hxs : x ∈ s) : x ∈ s ∪ t := by
-  sorry
+  simp
+  left
+  assumption
   done
 
 
 example (hx : x ∈ s \ t) : x ∈ (s ∪ t) ∩ (sᶜ ∪ tᶜ) := by
-  sorry
+  simp at *
+  obtain ⟨hsx, htx⟩ := hx
+  constructor
+  left
+  exact hsx
+  right
+  exact htx
   done
 
 
@@ -226,12 +252,18 @@ example (hx : x ∈ s \ t) : x ∈ (s ∪ t) ∩ (sᶜ ∪ tᶜ) := by
 #check (subset_def : (s ⊆ t) = ∀ x ∈ s, x ∈ t)
 
 example : s ∩ t ⊆ s ∩ (t ∪ u) := by
-  sorry
+  rw[subset_def]
+  intro x hx
+  constructor
+  · exact hx.1
+  · left
+    exact hx.2
   done
 
 /- You can also prove it at the level of sets, without talking about elements. -/
 example : s ∩ t ⊆ s ∩ (t ∪ u) := by
-  sorry
+  gcongr
+  exact subset_union_left
   done
 
 
@@ -248,15 +280,18 @@ or using the `ext` tactic.
 #check (subset_antisymm : s ⊆ t → t ⊆ s → s = t)
 
 example : s ∩ t = t ∩ s := by
-  sorry
+  ext x
+  simp
+  exact And.comm
   done
 
 /- We can also use existing lemmas and `calc`. -/
 example : (s ∪ tᶜ) ∩ t = s ∩ t := by
-  sorry
+  calc
+    (s ∪ tᶜ) ∩ t = (s ∩ t )∪(tᶜ ∩ t) :=by rw [@union_inter_distrib_right]
+    _ = (s ∩ t )∪∅ :=by rw [@compl_inter_self]
+    _ = s ∩ t  :=by rw [@union_empty]
   done
-
-
 
 
 /-
@@ -272,7 +307,9 @@ def evens : Set ℕ := {n : ℕ | Even n}
 def odds : Set ℕ := {n | Odd n}
 
 example : evensᶜ = odds := by
-  sorry
+  unfold evens odds
+  ext n
+  simp only [mem_compl_iff, mem_setOf_eq, Nat.not_even_iff_odd]
   done
 
 
@@ -347,7 +384,19 @@ example (𝓒 : Set (Set α)) :
 
 example (C : ι → Set α) (s : Set α) :
     s ∩ (⋃ i, C i) = ⋃ i, (C i ∩ s) := by
-  sorry
+  ext x
+  constructor
+  · intro hx
+    obtain ⟨ hxs, hxC⟩ := hx
+    simp at hxC
+    obtain ⟨i , hi⟩ :=hxC
+    simp only [mem_iUnion, mem_inter_iff]
+    use i
+  · simp only [mem_iUnion, mem_inter_iff]
+    intro hx
+    obtain ⟨ i, hxC, hxs ⟩ := hx
+    refine ⟨ hxs, ?_⟩
+    use i
   done
 
 

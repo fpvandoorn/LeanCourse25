@@ -208,7 +208,11 @@ example : a = a * b → a = 0 ∨ b = 1 := by
   intro h
   have hyp : a * (b - 1) = 0 := by linarith
   rw [mul_eq_zero] at hyp
-  sorry
+  obtain ha | hb := hyp
+  · left
+    exact ha
+  · right
+    linarith    
   done
 
 
@@ -218,7 +222,12 @@ example (f : ℝ → ℝ) (hf : StrictMono f) : Injective f := by
   intro x y hxy
   have h : x < y ∨ x = y ∨ x > y := by
     exact lt_trichotomy x y
-  sorry
+  obtain hlt | heq | hgt := h
+  · have : f x < f y := hf hlt
+    linarith  
+  · exact heq
+  · have : f y < f x := hf hgt
+    linarith  
   done
 
 /- ## Negation
@@ -229,12 +238,22 @@ We can use the same tactics as for implication:
 `intro` to prove a negation, and `apply` to use one. -/
 
 example {p : Prop} (h : p) : ¬ ¬ p := by
-  sorry
+  intro hp
+  apply hp 
+  exact h
   done
 
 example {α : Type*} {p : α → Prop} : ¬ (∃ x, p x) ↔ ∀ x, ¬ p x := by
-  sorry
-  done
+constructor
+· -- (→)  If no witness exists, then every point fails p
+    intro h x hx
+    apply h
+    exact ⟨x, hx⟩
+· -- (←)  If every point fails p, then no witness exists
+    intro h hex
+    obtain ⟨x, hx⟩ := hex
+    exact (h x) hx
+done
 
 /- We can use `exfalso` to use the fact that
 everything follows from `False`: ex falso quod libet -/

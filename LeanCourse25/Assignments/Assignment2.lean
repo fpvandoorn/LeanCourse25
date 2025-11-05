@@ -13,7 +13,10 @@ open Real Function Set Nat
 /-! # Exercises to practice. -/
 
 example (p q r s : Prop) (h : p ∧ q → r) (hp : p) (h' : q → s) : q → r ∧ s := by
-  sorry
+  intro hq
+  constructor
+  · apply h ⟨hp, hq⟩
+  · apply h' hq
   done
 
 example {α : Type*} {p q : α → Prop} (h : ∀ x, p x → q x) :

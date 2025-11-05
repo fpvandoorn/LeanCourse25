@@ -294,9 +294,18 @@ Also try it directly with `rw`.
 
 example (a b c : ℝ) (h : a = b - c) (h2 : b * b = 2 * c) :
     a * b = (2 - b) * c := by
-  sorry
-  done
+  calc
+      a * b = (b-c) * b := by rw [h]
+      _     = b*b -c*b  := by ring
+      _     = 2*c - c*b := by rw [h2]
+      _     = (2 - b) * c := by ring
 
+example (a b c : ℝ) (h : a = b - c) (h2 : b * b = 2 * c) :
+  a * b = (2 - b) * c := by
+  rw [h]        -- replace a with (b - c)
+  rw [sub_mul]  -- simplify: (b - c) * b → b*b - c*b
+  rw [h2]       -- replace b*b with 2*c
+  ring_nf       -- simplify: 2*c - c*b → (2 - b)*c
 
 
 /-
@@ -346,7 +355,7 @@ example (p q r : Prop) (hq : p → q) (hr : p → q → r) : p → r := by
 
 /- We can also use `specialize` to apply a hypothesis to arguments. -/
 example (p q : Prop) (a b c : ℝ) (hq : p → q) (hr : p → q → a = b) : p → a + c = b + c := by
-  intro hp
+  intro hp  
   specialize hq hp
   specialize hr hp hq
   rw [hr]
@@ -376,6 +385,10 @@ example (p q r s : Prop) (hq : p → s → q) (hr : q → r) : s → p → r := 
   · exact hp
   · assumption
   done
+
+
+
+
 
 example (p q r s : Prop) (hq : (p → s) → q) (hr : q → r) : s → p → r := by
   intro hs hp
@@ -412,7 +425,11 @@ variable (f g : ℝ → ℝ)
 #check (continuous_sin : Continuous (fun x : ℝ ↦ sin x))
 
 example : Continuous (fun x ↦ x + x * Real.sin x) := by
-  sorry
+  apply Continuous.add       -- need both parts continuous
+  ·apply continuous_id        -- part 1: x ↦ x
+  apply Continuous.mul       -- part 2: x ↦ x * sin x
+  ··apply continuous_id        -- factor 1: x ↦ x
+  ··apply continuous_sin       -- factor 2: x ↦ sin x
   done
 
 
@@ -429,6 +446,7 @@ example : Continuous (fun x ↦ x + x * Real.sin x) := by
 -/
 
 
+
 #check exp_le_exp
 #check (exp_le_exp.1 : exp a ≤ exp b → a ≤ b)
 #check (exp_le_exp.2 : a ≤ b → exp a ≤ exp b)
@@ -437,20 +455,24 @@ example : Continuous (fun x ↦ x + x * Real.sin x) := by
 
 
 example (h : a ≤ b) : exp a ≤ exp b := by
-  sorry
+  apply exp_le_exp.2
+  exact h 
   done
 
 
 
 example (h : exp a ≤ exp b) : a ≤ b := by
-  sorry
+  apply exp_le_exp.1
+  assumption 
   done
 
 
 
 
 example {p q : Prop} (h1 : p → q) (h2 : q → p) : p ↔ q := by
-  sorry
+  constructor
+  · apply h1
+  · apply h2
   done
 
 
@@ -468,9 +490,11 @@ def Injective (f : ℝ → ℝ) : Prop := ∀ x y : ℝ, f x = f y → x = y
 
 example (f g : ℝ → ℝ) (hg : Injective g) (hf : Injective f) :
     Injective (g ∘ f) := by
-  sorry
+  intro x y h
+  specialize hg (f x) (f y) h
+  have h1 : f x = f y := hg
+  exact hf x y h1  
   done
-
 
 
 

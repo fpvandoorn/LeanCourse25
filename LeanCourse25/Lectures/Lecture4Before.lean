@@ -82,16 +82,22 @@ using the following tactics.
 * `push_neg` to push negations inside quantifiers and connectives.
 -/
 example (p q : Prop) (h : ¬q → ¬p) : p → q := by
-  sorry
+  intro hp
+  by_contra hq
+  have:= h hq
+  apply h hq hp 
   done
 
 example (p r : Prop) (h1 : p → r) (h2 : ¬ p → r) : r := by
-  sorry
+  by_cases hp : p
+  · apply h1 hp
+  · apply h2 hp
   done
 
 example {α : Type*} {p : α → α → Prop} :
     ¬ (∃ x y, p x y) ↔ ∀ x y, ¬ p x y := by
-  sorry
+  push_neg
+  rfl
   done
 
 /-
@@ -104,13 +110,16 @@ we need to use `by_contra` to begin a proof by contradiction.
 
 /- The `contrapose` tactic starts a proof by contraposition -/
 example (p q : Prop) (h : ¬q → ¬p) : p → q := by
-  sorry
+  contrapose
+  assumption 
   done
 
 -- Exercise: prove this by contraposition.
 example : 2 ≠ 4 → 1 ≠ 2 := by
-  sorry
-  done
+  contrapose!
+  intro h 
+  linarith
+  done 
 
 -- Final remark: the `use` tactic is compatible with constructive logic.
 
@@ -122,14 +131,69 @@ def SequentialLimit (u : ℕ → ℝ) (l : ℝ) : Prop :=
 
 example (u : ℕ → ℝ) (l : ℝ) : ¬ SequentialLimit u l ↔
     ∃ ε > 0, ∀ N, ∃ n ≥ N, |u n - l| ≥ ε := by
-  sorry
+  unfold SequentialLimit
+  push_neg  
+  rfl
   done
 
 lemma sequentialLimit_unique (u : ℕ → ℝ) (l l' : ℝ) :
     SequentialLimit u l → SequentialLimit u l' → l = l' := by
-  sorry
-  done
+  intro hl hl'
+  by_contra H
+  have : 0 < |l - l'| := by 
+    exact abs_pos.mpr (sub_ne_zero.mpr H)
+  specialize hl (|l - l'| / 2) (by linarith)
+  specialize hl' (|l - l'| / 2) (by linarith)
+  obtain ⟨N, hN⟩ := hl
+  obtain ⟨N', hN'⟩ := hl' 
+  let N₀ := max N N'
+  have h1 : N₀ ≥ N := by apply le_max_left
+  have h2 : N₀ ≥ N' := by apply le_max_right
+  specialize hN N₀ h1
+  specialize hN' N₀ h2   
+  have key : |l - l'| < |l - l'| := calc 
+      |l - l'| = |u N₀ - l + (l' - u N₀)| := by sorry
+      _ ≤ |u N₀ - l| + |l' - u N₀| := by sorry
+      _ < |l - l'| / 2 + |l - l'| / 2 := by sorry
+      _ = |l - l'| := by ring
+  linarith    
+  done  
 
+
+lemma sequentialLimit_unique1 (u : ℕ → ℝ) (l l' : ℝ) :
+    SequentialLimit u l → SequentialLimit u l' → l = l' := by
+  intro hl hl'
+  by_contra H
+  have hpos : 0 < |l - l'| := by
+    exact abs_pos.mpr (sub_ne_zero.mpr H)
+  -- take ε = |l - l'|/2 > 0 for both limits
+  specialize hl (|l - l'| / 2) (by have := hpos; linarith)
+  specialize hl' (|l - l'| / 2) (by have := hpos; linarith)
+  obtain ⟨N, hN⟩ := hl
+  obtain ⟨N', hN'⟩ := hl'
+  let N₀ := max N N'
+  have h1 : N ≤ N₀ := le_max_left _ _
+  have h2 : N' ≤ N₀ := le_max_right _ _
+  have hA : |l - u N₀| < |l - l'| / 2 := by
+    -- hN gives |u N₀ - l| < ε; flip with abs_sub_comm
+    have := hN N₀ h1
+    simpa [abs_sub_comm] using this
+  have hB : |l' - u N₀| < |l - l'| / 2 := by
+    -- hN' gives |u N₀ - l'| < ε; flip with abs_sub_comm
+    have := hN' N₀ h2
+    simpa [abs_sub_comm] using this
+  -- Triangle inequality contradiction:
+  have key : |l - l'| < |l - l'| := by
+    calc
+      |l - l'|
+          = |(l - u N₀) + (u N₀ - l')| := by ring
+      _ ≤ |l - u N₀| + |u N₀ - l'| := by
+            simpa using abs_add_le (l - u N₀) (u N₀ - l')
+      _ < |l - l'| / 2 + |l - l'| / 2 := by
+            have : |u N₀ - l'| = |l' - u N₀| := by simpa [abs_sub_comm]
+            exact add_lt_add_of_lt_of_lt hA (by simpa [this] using hB)
+      _ = |l - l'| := by linarith
+  exact (lt_irrefl (|l - l'|)) key
 
 /- ## Proving two functions are equal
 
@@ -139,22 +203,27 @@ point, using the `ext` tactic. `ext x` can prove that `f = g` if `f x = g x` for
 -/
 
 example {α β : Type*} {f g : α → β} (h : ∀ x, f x = g x): f = g := by
-  sorry
+  ext x
+  apply h
+  done
 
 -- `rfl` can prove an equality `f = f`,
 example : (fun n ↦ n + 2 : ℤ → ℤ) = (fun n ↦ n + 2 : ℤ → ℤ) := rfl
 
 -- but once two functions are not "obviously" equal, you need `ext` to prove it.
 example : (fun n ↦ n + 2 : ℤ → ℤ) = (fun n ↦ n + 2 + 0 : ℤ → ℤ) := by
-  sorry
+  ext n
+  ring
   done
 
 example : (fun n ↦ 2 * n : ℤ → ℤ) = (fun n ↦ n + n) := by
-  sorry
+  ext n
+  ring
   done
 
 example : (fun (n : ℤ) ↦ 2 * n + 5) = (fun (n : ℤ) ↦ (n + 2) + (n + 6) - 3) := by
-  sorry
+  ext n
+  ring
   done
 
 
@@ -176,7 +245,11 @@ def g : ZMod 5 → ZMod 5 := fun x ↦ x
 
 -- Are f and g always equal? Yes! Let's prove it.
 example : f = g := by
-  sorry
+  ext x 
+  unfold f g
+  have: x= 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 ∨ x = 4 := by
+    fin_cases x <;> simp
+  obtain (rfl | rfl | rfl | rfl | rfl) := this <;> rfl 
   done
 
 
@@ -210,7 +283,8 @@ We have seen two new tactics:
 -- Lean figures out the co-domain of the left hand side, and the type of the function
 -- on the right hand side automatically.
 example : (fun x ↦ x ^ 7 + 2 * x ^ 13 : ZMod 7 → _) = (fun x ↦ 3 * x) := by
-  sorry
+  ext k
+  fin_cases k <;> rfl
   done
 
 -- Both of these examples hold for a deeper mathematical reason.
@@ -261,7 +335,8 @@ You can often find similar theorems nearby the theorem you searched for.
 -/
 
 example (a b x y : ℝ) (h : a < b) (h2 : x ≤ y) : a + exp x < b + exp y := by
-  sorry
+  refine add_lt_add_of_lt_of_le h ?_
+  exact exp_le_exp.mpr h2 
   done
 
 
@@ -271,7 +346,8 @@ This means that these arguments are *implicit*:
 they don't have to be stated, but will be figured out by Lean automatically. -/
 
 lemma cancel_addition {a b c : ℝ} (h : a + b = a + c) : b = c := by
-  sorry
+  rw [add_left_cancel_iff] at h
+  assumption
   done
 
 example {b c : ℝ} (h : 2 + b = 2 + c) : b = c := by
@@ -292,7 +368,9 @@ example {G : Type*} [Group G] (a : G) : a * a⁻¹ = 1 := by
 example {G : Type*} [Group G] (a : G) : a⁻¹ * a * a * a⁻¹ = 1 := by
   -- Let us try `rw?` first.
   -- Now, we use `rw??`.
-  sorry
+  rw [inv_mul_cancel a]
+  rw [one_mul a]
+  exact mul_inv_cancel a
   done
 
 -- You can also use `rw??` at a hypothesis: simply select a local hypothesis in the infoview.
@@ -334,7 +412,10 @@ example (x : ℝ) : x ≤ x := by apply le_refl
 example (x : ℝ) : x ≤ x := by rfl
 
 example (h₀ : a = b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e := by
-  sorry
+  rw [h₀]         -- replace a with b
+  trans d         -- we want to go from b < d
+  · exact h₁.trans_le h₂   -- use b < c and c ≤ d
+  · exact h₃               -- finally d < e
   done
 
 /- `linarith` can prove inequalities (and equalities)
@@ -363,7 +444,8 @@ example (ha : 0 ≤ a) (hb : 0 ≤ b) (h : 0 ≤ c) : a * (b + 2) ≤ (a + c) * 
 /- `gcongr` is very convenient for monotonicity of functions. -/
 
 example (h : a ≤ b) (h2 : b ≤ c) : exp a ≤ exp c := by
-  sorry
+  gcongr
+  trans b <;> assumption
   done
 
 example (h : a ≤ b) : c - exp b ≤ c - exp a := by
