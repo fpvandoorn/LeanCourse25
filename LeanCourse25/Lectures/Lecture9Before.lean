@@ -20,11 +20,45 @@ variable (a b c : ℝ)
 
 /-- Let's define the equivalence relation for the even numbers: two numbers are equivalent
 iff their difference is an even number. -/
-def evensEquivalenceRelation : Setoid ℤ := sorry
 
+def evensEquivalenceRelation : Setoid ℤ :=
+{ r := fun a b => Even (a - b),
+  iseqv :=
+  ⟨
+    -- Reflexive
+    by
+      intro a
+      show Even (a - a)
+      rw [sub_self]
+      use 0
+      simp,
 
+    -- Symmetric
+    by
+      intro a b h
+      -- h : Even (a - b)
+      rcases h with ⟨k, hk⟩
+      -- hk : a - b = 2 * k
+      show Even (b - a)
+      -- note: b - a = -(a - b)
+      rw [← neg_sub]
+      rw [hk]
+      -- b - a = -(2 * k) = 2 * (-k)
+      use -k
+      ring,
 
-
+    -- Transitive
+    by
+      intro a b c hab hbc
+      rcases hab with ⟨k₁, hk₁⟩
+      rcases hbc with ⟨k₂, hk₂⟩
+      show Even (a - c)
+      use k₁ + k₂
+      calc
+        a - c = (a - b) + (b - c) := by ring
+        _     = k₁ + k₁ + (k₂ +k₂)  := by rw [hk₁, hk₂]
+        _     = k₁ + k₂ + (k₁ + k₂)    := by ring
+  ⟩ }
 
 
 

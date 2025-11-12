@@ -52,6 +52,7 @@ variable (a b c : ℝ)
 /- # Today: structures and classes -/
 
 
+
 /-
 # Structures and classes
 

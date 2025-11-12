@@ -35,17 +35,26 @@ instance : Add Point := ⟨add⟩
 
 -- Prove that addition of points is associative.
 lemma add_assoc {a b c : Point} : a + (b + c) = a + b + c := by
-  sorry
-  done
+  ext
+  · show a.x + (b.x + c.x) = (a.x + b.x) + c.x
+    exact Eq.symm (_root_.add_assoc a.x b.x c.x)
+  · show a.y + (b.y + c.y) = (a.y + b.y) + c.y
+    exact Eq.symm (_root_.add_assoc a.y b.y c.y)
+  · show a.z + (b.z + c.z) = (a.z + b.z) + c.z
+    exact Eq.symm (_root_.add_assoc a.z b.z c.z)
 
 -- Define scalar multiplication of a point by a real number
 -- in the way you know from Euclidean geometry.
-def smul (r : ℝ) (a : Point) : Point := sorry
+def smul (r : ℝ) (a : Point) : Point :=
+  { x:= r*a.x
+    y:= r*a.y
+    z:= r*a.z
+  }
 
 -- If you made the right definition, proving these lemmas should be easy.
-@[simp] lemma smul_x (r : ℝ) (a : Point) : (Point.smul r a).x = r * a.x := by sorry
-@[simp] lemma smul_y (r : ℝ) (a : Point) : (Point.smul r a).y = r * a.y := by sorry
-@[simp] lemma smul_z (r : ℝ) (a : Point) : (Point.smul r a).z = r * a.z := by sorry
+@[simp] lemma smul_x (r : ℝ) (a : Point) : (Point.smul r a).x = r * a.x := by rfl
+@[simp] lemma smul_y (r : ℝ) (a : Point) : (Point.smul r a).y = r * a.y := by rfl
+@[simp] lemma smul_z (r : ℝ) (a : Point) : (Point.smul r a).z = r * a.z := by rfl
 
 -- This registers the above operation as "scalar multiplication":
 -- you can now write • for scalar multiplication.
@@ -74,13 +83,46 @@ def weightedAverage (lambda : Real) (lambda_nonneg : 0 ≤ lambda) (lambda_le : 
   (a b : StandardTwoSimplex) : StandardTwoSimplex
 where
   coords := lambda • a.coords + (1 - lambda) • b.coords
-  x_nonneg := by sorry
-  y_nonneg := by sorry
-  z_nonneg := by sorry
-  sum_eq := by sorry
+  x_nonneg := by
+    have hx₁ : 0 ≤ lambda • a.coords.x  :=   mul_nonneg lambda_nonneg  a.x_nonneg
+    have h01 : 0 ≤ 1 - lambda := sub_nonneg.mpr lambda_le
+    have hx₂ : 0 ≤ (1 - lambda) • b.coords.x :=  mul_nonneg h01 b.x_nonneg
+    have hx := add_nonneg hx₁ hx₂
+    change 0 ≤ lambda * a.coords.x + (1 - lambda) * b.coords.x
+    exact hx
 
+
+  y_nonneg := by
+    have hy₁ : 0 ≤ lambda • a.coords.y  :=   mul_nonneg lambda_nonneg  a.y_nonneg
+    have h01 : 0 ≤ 1 - lambda := sub_nonneg.mpr lambda_le
+    have hy₂ : 0 ≤ (1 - lambda) • b.coords.y :=  mul_nonneg h01 b.y_nonneg
+    have hy := add_nonneg hy₁ hy₂
+    change 0 ≤ lambda * a.coords.y + (1 - lambda) * b.coords.y
+    exact hy
+
+  z_nonneg := by
+    have hz₁ : 0 ≤ lambda • a.coords.z  :=   mul_nonneg lambda_nonneg  a.z_nonneg
+    have h01 : 0 ≤ 1 - lambda := sub_nonneg.mpr lambda_le
+    have hz₂ : 0 ≤ (1 - lambda) • b.coords.z :=  mul_nonneg h01 b.z_nonneg
+    have hz := add_nonneg hz₁ hz₂
+    change 0 ≤ lambda * a.coords.z + (1 - lambda) * b.coords.z
+    exact hz
+
+  sum_eq := by
+    have ha := a.sum_eq
+    have hb := b.sum_eq
+    calc
+      (lambda • a.coords + (1 - lambda) • b.coords).x
+        + (lambda • a.coords + (1 - lambda) • b.coords).y
+        + (lambda • a.coords + (1 - lambda) • b.coords).z
+      = lambda • a.coords.x + (1 - lambda) • b.coords.x
+        + (lambda • a.coords.y + (1 - lambda) • b.coords.y)
+        + (lambda • a.coords.z + (1 - lambda) • b.coords.z) := by rfl
+    _ = lambda * (a.coords.x + a.coords.y + a.coords.z)
+          + (1 - lambda) * (b.coords.x + b.coords.y + b.coords.z) := by
+          simp [mul_add, add_assoc, add_comm, add_left_comm]
+    _ = 1 := by simp [ha, hb]
 end
-
 end StandardTwoSimplex
 
 
@@ -140,16 +182,38 @@ def op (a b : Point4) : Point4 where
 
 -- Prove that op is associative.
 lemma op_assoc {a b c : Point4} : op (op a b) c = op a (op b c) := by
-  sorry
-  done
+  ext <;>
+  simp [op, sub_eq_add_neg, mul_add, add_mul]
+  <;> ring
+
+
+
+
 
 -- Investigate whether op is commutative: prove one of the following.
-lemma op_comm : ∀ a b : Point4, op a b = op b a := by sorry
+lemma not_op_comm : ¬ ∀ a b : Point4, op a b = op b a := by
+  by_contra h
+  let i : Point4 := {x := 0, y := 1, z := 0, w := 0}
+  let j : Point4 := {x := 0, y := 0, z := 1, w := 0}
+  have h₁: (op i j).w = 1 := by simp [op, i, j]
+  have h₂: (op j i).w = -1 := by simp [op, i, j]
+  have hw : (op i j).w = (op j i).w := by
+    have := congrArg Point4.w (h i j)
+    assumption
+  rw [h₁, h₂] at hw   -- turns hw into 1 = -1
+  have ha : (1 : ℝ) = -1 := hw
+  have hb : (1 : ℝ) ≠ -1 := by norm_num
+  exact hb ha
+
+
+
 
 -- For the latter, you may the following helpful.
 example : ⟨0, 1, 2, 3⟩ ≠ (⟨0, 3, 2, 3⟩ : Point4) := by
-  sorry
-  done
+  intro h
+  have hy : (1 : ℝ) = 3 := congrArg Point4.y h
+  have hne : (1 : ℝ) ≠ 3 := by norm_num
+  exact hne hy
 
 example {x y : ℝ} (h : x ≠ y) : ⟨0, 1, x, 3⟩ ≠ (⟨0, 1, y, 3⟩ : Point4) := by
   sorry
@@ -169,8 +233,19 @@ lemma not_op_comm : ¬(∀ a b : Point4, op a b = op b a) := by
 def SpecialPoint := { p : Point4 // p.x ^2 + p.y ^2 + p.z ^ 2 + p.w ^ 2 = 1 }
 
 -- We define "the same" operation on special points: complete the proof.
-def op' (a b : SpecialPoint) : SpecialPoint :=
-  ⟨op a.val b.val, sorry⟩
+def op' (a b : SpecialPoint) : SpecialPoint := by
+  refine ⟨op a.val b.val, ?_⟩
+  have hmul :
+      (op a.val b.val).x^2 + (op a.val b.val).y^2
+    + (op a.val b.val).z^2 + (op a.val b.val).w^2
+      =
+      (a.val.x^2 + a.val.y^2 + a.val.z^2 + a.val.w^2) *
+      (b.val.x^2 + b.val.y^2 + b.val.z^2 + b.val.w^2) := by
+    simp [op] ; ring
+
+  rw [a.property, b.property] at hmul
+  simp[hmul]
+
 
 -- Prove that `SpecialPoint` with the operation `op'` is a group.
 -- (If commutativity holds, it's even an abelian group. You don't need to prove this.)
