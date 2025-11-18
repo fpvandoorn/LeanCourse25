@@ -219,6 +219,7 @@ whether a number is even or not.
 -- #synth Decidable RiemannHypothesis
 
 
+
 /-
 If you open the `Classical` namespace, then you can treat
 any finite set as a `Finset`.
@@ -337,11 +338,11 @@ example {α : Type*} [DecidableEq α] (f : α → ℕ)
     simp [ha]
     constructor
     · apply h
-      exact?
+      exact mem_insert_self a s
     · apply ih
       intros x hx
       apply h
-      exact?
+      simp [hx]
   done
 
 

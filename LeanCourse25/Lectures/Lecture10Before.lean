@@ -55,9 +55,11 @@ we're opening the `Real` namespace just for the following command.
 
 open Real in
 #check π
-
-
 -- #check π
+
+open Real in
+#check Real.pi
+
 
 
 /- You can declare your own notation with the `notation` keyword. -/
@@ -147,7 +149,7 @@ compute what elements it contains.
 #eval ({j ∈ {1, 2, 3, 4} | Even j} : Finset ℕ)
 
 
--- #check ({j ∈ {1} | RiemannHypothesis } : Finset ℕ)
+--#check ({j ∈ {1} | RiemannHypothesis } : Finset ℕ)
 
 
 
@@ -258,9 +260,52 @@ the following induction principle.
 example {α : Type*} [DecidableEq α] (f : α → ℕ)
     (s : Finset α) (h : ∀ x ∈ s, f x ≠ 0) :
     ∏ x ∈ s, f x ≠ 0 := by
-  sorry
-  done
 
+  -- Induktion über s mit dem Eliminator Finset.induction_on
+  induction s using Finset.induction with
+  |   empty =>
+      -- Fall s = ∅
+      -- Ziel: ∏ x ∈ ∅, f x ≠ 0
+      simp
+  | @insert a s ha ih =>
+      -- Annahmen in diesem Fall:
+      -- a : α
+      -- s : Finset α
+      -- ha : a ∉ s
+      -- ih : (∀ x ∈ s, f x ≠ 0) → ∏ x ∈ s, f x ≠ 0
+      -- h : ∀ x ∈ insert a s, f x ≠ 0
+      -- Ziel: ∏ x ∈ insert a s, f x ≠ 0
+
+      -- 1) f a ≠ 0 aus h
+      have ha0 : f a ≠ 0 := h a (by simp)
+
+      -- 2) Hypothese nur auf s einschränken
+      have h' : ∀ x ∈ s, f x ≠ 0 := by
+        intro x hx
+        exact h x (by simp [hx])
+
+      -- 3) Induktionsvoraussetzung benutzen
+      have hs0 : ∏ x ∈ s, f x ≠ 0 := ih h'
+
+      -- 4) Produkt bleibt ≠ 0
+      have hprod : f a * ∏ x ∈ s, f x ≠ 0 :=
+        Nat.mul_ne_zero ha0 hs0
+      have h: f a ≠ 0 ∧ ∏ x ∈ s, f x ≠ 0 := by
+
+        constructor
+        · -- Ziel: f a ≠ 0
+            intro hfa        -- hfa : f a = 0
+            apply hprod      -- wir wollen zeigen: f a * ∏ x ∈ s, f x = 0
+            simp [hfa]       -- ergibt: 0 * ... = 0
+
+        · -- Ziel: ∏ x ∈ s, f x ≠ 0
+            intro hs         -- hs : ∏ x ∈ s, f x = 0
+            apply hprod
+            simp [hs]        -- f a * 0 = 0
+          -- Replace simpa with basic tactics:
+      simp [ha]
+      push_neg  -- goal becomes: f a * ∏ x ∈ s, f x ≠ 0
+      exact h
 
 
 
@@ -322,7 +367,9 @@ example {α β : Type*} (s : Finset α) (t : Finset β)
     (h_left : ∀ a ∈ s, 3 ≤ #{b ∈ t | r a b})
     (h_right : ∀ b ∈ t, #{a ∈ s | r a b} ≤ 1) :
     3 * #s ≤ #t := by
-  sorry
+  calc
+    3* #s   := by soerry
+
   done
 
 

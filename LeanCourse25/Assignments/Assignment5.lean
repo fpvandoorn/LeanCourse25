@@ -1,6 +1,10 @@
 import Mathlib.Analysis.Complex.Exponential
 
 import Mathlib
+import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.NumberTheory.LSeries.RiemannZeta
 open Real Function Set
 
 /-
@@ -111,11 +115,40 @@ The following exercise makes this precise: prove it.
 
 Remember that Lean has proof irrelevance: any two proofs of a given proposition are equal.
 -/
-example (choiceFunction : ∀ (α : Type) (p : α → Prop) (_h : ∃ x, p x), α)
-    (h : ∀ (α : Type) (p : α → Prop) (x : α) (hx : p x), choiceFunction α p ⟨x, hx⟩ = x) :
-    False := by
-  sorry
 
+example (choiceFunction : ∀ (α : Type) (p : α → Prop) (_h : ∃ x, p x), α)
+    (h : ∀ (α : Type) (p : α → Prop) (x : α) (hx : p x),
+      choiceFunction α p ⟨x, hx⟩ = x) :
+    False := by
+  -- Wir nehmen α = Bool und ein triviales Prädikat.
+  let p : Bool → Prop := fun _ => True
+  have ht : p true := trivial
+  have hf : p false := trivial
+
+  -- Nach der gegebenen "Rechenregel":
+  have ht_eq : choiceFunction Bool p ⟨true, ht⟩ = true :=
+    h Bool p true ht
+  have hf_eq : choiceFunction Bool p ⟨false, hf⟩ = false :=
+    h Bool p false hf
+
+  -- In Prop (also auch für ∃ b, p b) gilt Beweis-Irrelevanz:
+  have hexists_eq : (⟨true, ht⟩ : ∃ b, p b) = ⟨false, hf⟩ :=
+    Subsingleton.elim _ _
+
+  -- Also müssen auch die Werte der choiceFunction gleich sein:
+  have hchoice_eq :
+      choiceFunction Bool p ⟨true, ht⟩ =
+        choiceFunction Bool p ⟨false, hf⟩ :=
+    congrArg (choiceFunction Bool p) hexists_eq
+
+  -- Daraus folgt true = false, Widerspruch.
+  have : true = false := by
+    calc
+      true = choiceFunction Bool p ⟨true, ht⟩ := ht_eq.symm
+      _    = choiceFunction Bool p ⟨false, hf⟩ := hchoice_eq
+      _    = false := hf_eq
+
+  exact (Bool.eq_not_self true).mp this
 
 end choice
 
@@ -144,10 +177,132 @@ Hints:
 -/
 attribute [-simp] Finset.card_powerset
 #check Finset.induction
+#check insert
 
-lemma finset_card_powerset (α : Type*) (s : Finset α) :
+
+example (α : Type*) [DecidableEq α] (s : Finset α) (a : α) : insert a s = {a} ∪ s := by rfl
+
+
+lemma finset_card_powerset (α : Type*) [DecidableEq α] (s : Finset α) :
     Finset.card (Finset.powerset s) = 2 ^ Finset.card s := by
-  sorry
-  done
+  induction s using Finset.induction with
+  | empty => simp
+  | @insert a s ha ih =>
+      have hsplit:
+        Finset.powerset (insert a s)
+          =  Finset.powerset s ∪
+            (Finset.powerset s).image (fun t => insert a t ) := by
+        exact Finset.powerset_insert s a
+
+      have hdisj:
+        Disjoint (Finset.powerset s ) ((Finset.powerset s).image (fun t => insert a t )) := by
+
+          -- Use the characterization of disjointness for Finsets:
+          -- A and B are disjoint if for every element t,
+          -- t ∈ A → t ∈ B → False.
+        refine Finset.disjoint_left.mpr ?_
+
+        -- Introduce:
+        -- t  = a candidate subset
+        -- ht  : t ∈ powerset s
+        -- ht' : t ∈ image (insert a) (powerset s)
+        intro t ht ht'
+
+        -- From membership in the image, we obtain:
+        --  t = insert a u for some u ∈ powerset s.
+        rcases Finset.mem_image.mp ht' with ⟨u, hu, rfl⟩
+
+        -- From ht : t ∈ powerset s and t = insert a u,
+        -- we get the subset condition:
+        --   insert a u ⊆ s.
+        have hsubset : insert a u ⊆ s := Finset.mem_powerset.mp ht
+
+        -- But a is always contained in insert a u.
+        have ha_in : a ∈ insert a u :=  Finset.mem_insert_self a u
+
+        -- Therefore a ∈ s.
+        have this: a ∈ s := hsubset ha_in
+
+        -- But this contradicts the induction hypothesis ‘ha : a ∉ s’.
+        exact ha this
+
+      have hinj:
+          ∀ t u: Finset α,
+          t ∈ Finset.powerset s →
+          u ∈ Finset.powerset s →
+          insert a t = insert a u → t = u := by
+            intro t u ht hu h
+            refine Finset.ext_iff.mpr ?_
+
+            -- From t,u ∈ powerset s we know: t ⊆ s and u ⊆ s
+            have ht_ss : t ⊆ s := Finset.mem_powerset.mp ht
+            have hu_ss : u ⊆ s := Finset.mem_powerset.mp hu
+
+            -- Since a ∉ s, a ∉ t and a ∉ u
+            have ha_t : a ∉ t := fun h_mem => ha (ht_ss h_mem)
+            have ha_u : a ∉ u := fun h_mem => ha (hu_ss h_mem)
+
+            -- Remove a from both sides of insert a t = insert a u
+            -- Lean has: Finset.erase_insert ha_t : erase a (insert a t) = t
+            --           Finset.erase_insert ha_u : erase a (insert a u) = u
+            have h₁:= congrArg (Finset.erase · a) h
+          -- erase-insert identities
+            have h₂ : (insert a t).erase a = t :=
+              Finset.erase_insert ha_t
+            have h₃ : (insert a u).erase a = u :=
+              Finset.erase_insert ha_u
+
+            -- chain equalities to get t = u
+            have htu : t = u := by
+              calc
+                t = (insert a t).erase a := h₂.symm
+                _ = (insert a u).erase a := h₁
+                _ = u := h₃
+            simp[htu]
+
+
+      -- Now compute cardinalities:
+      -- |powerset (insert a s)| = |powerset s| + |image|
+      -- and |image| = |powerset s|
+ -- cardinality of the image: same as cardinality of powerset s
+      have hcard_image :
+        Finset.card ((Finset.powerset s).image (fun t => insert a t)) =
+          Finset.card (Finset.powerset s) := by
+        -- card_image_iff lets us use our injectivity lemma
+        apply Finset.card_image_iff.mpr
+        intro t u ht hu h
+        exact hinj t ht u hu h
+
+      -- cardinality of the union from the split decomposition
+      have hcard_union :
+        Finset.card (Finset.powerset (insert a s)) =
+          Finset.card (Finset.powerset s)
+          + Finset.card ((Finset.powerset s).image (fun t => insert a t)) := by
+        simp[hsplit]
+        exact Finset.card_union_of_disjoint hdisj
+
+      -- Now compute cardinalities:
+      -- |powerset (insert a s)| = |powerset s| + |image|
+      -- and |image| = |powerset s|
+      calc
+        Finset.card (Finset.powerset (insert a s))
+            = Finset.card (Finset.powerset s)
+              + Finset.card ((Finset.powerset s).image (fun t => insert a t)) := hcard_union
+        _   = Finset.card (Finset.powerset s)
+              + Finset.card (Finset.powerset s) := by
+                simp [hcard_image]
+        _   = 2 * Finset.card (Finset.powerset s) := by
+                simp [two_mul]
+        _   = 2 * 2 ^ Finset.card s := by
+                simp [ih]
+        _   = 2 ^ Finset.card s * 2 := by
+                ac_rfl
+        _   = 2 ^ (Finset.card s + 1) := by
+                simp [pow_succ, Nat.mul_comm]
+        _   = 2 ^ Finset.card (insert a s) := by
+                -- card (insert a s) = card s + 1 since a ∉ s
+                refine (Nat.pow_right_inj ?_).mpr ?_
+                linarith
+                exact Eq.symm (Finset.card_insert_of_notMem ha)
 
 end cardinality
