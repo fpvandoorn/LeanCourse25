@@ -91,6 +91,13 @@ To switch between branches:
 * Make sure you have saved and committed all your files.
 * Press the three dots icon next to `Changes` panel and use `⋯ > Checkout to...` and select the branch you want to switch to.
 
+### Working with a partner
+
+* If you collaborate with another student on a formalization project, you should still both fork this repository.
+* To pull the work from your partner, you can add their repository using `source control` panel `... > Remotes > Add remote ...`. For the URL, you should use `https://github.com/<TheirGitHubUserName>/LeanCourse25.git`.
+* After this you can pull their work using `... > Pull / Push > Pull from ...`.
+
+
 ### Make a pull request
 
 If you recently made pushed changes to a branch of your repository, you can simply go to the
