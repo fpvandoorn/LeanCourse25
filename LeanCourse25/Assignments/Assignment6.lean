@@ -134,26 +134,61 @@ variable {G : AddSubgroup ℚ}
 
 -- In the proof we will consider the following subgroup, consisting of all `n`-fold multiples
 -- of rational numbers.
-def multiple (n : ℕ) : AddSubgroup ℚ := sorry
+
+
+def multiple (n : ℕ) : AddSubgroup ℚ :=
+{ carrier := {x : ℚ | ∃ r,  n * r = x},
+  zero_mem' := by
+    use 0
+    simp,
+  add_mem' := by
+    intro x y hx hy
+    rcases hx with ⟨r₁, hr₁⟩
+    rcases hy with ⟨r₂, hr₂⟩
+    use (r₁ + r₂)
+    simp [hr₁, hr₂, mul_add],
+  neg_mem' :=  by
+    intro x hx
+    rcases hx with ⟨r, hr⟩
+    use -r
+    simp [hr]}
+
+
 
 -- If your definition above is correct, this proof is true by rfl.
-lemma mem_multiple_iff (n : ℕ) (q : ℚ) : q ∈ multiple n ↔ ∃ r, n * r = q := sorry -- by rfl
+lemma mem_multiple_iff (n : ℕ) (q : ℚ) : q ∈ multiple n ↔ ∃ r, n * r = q := by rfl -- by rfl
 
 -- The next lemma is a general fact from group theory: use mathlib to find the right lemma.
 -- Hint: it's similar to `Subgroup.pow_index_mem`.
 
+#loogle "AddGroup.Quotient"
+
+#check AddSubgroup.nsmul_index_mem
+
+#check Subgroup.pow_index_mem
+
+
 lemma step1 {n : ℕ} (hG : G.index = n) (q : ℚ) : n • q ∈ G := by
-  sorry
+  have h : G.index • q ∈ G :=
+    AddSubgroup.nsmul_index_mem (H := G) (g := q)
+  rw [← hG]
+  exact h
 
 lemma step2 {n : ℕ} (hG : G.index = n) : multiple n ≤ G := by
-  sorry
+  subgroup....
+
+  rw[sorry]
 
 lemma step3 {n : ℕ} (hn : n ≠ 0) : multiple n = ⊤ := by
-  sorry
+
+
+  exact mem_multiple_iff
 
 -- The goal of this exercise: (ℚ, +) has no non-trivial subgroups of finite index.
 example (hG : G.index ≠ 0) : G = ⊤ := by
-  sorry
+  1 in G
+
+  exact hG
 
 end
 
@@ -179,8 +214,10 @@ lemma add_pow_eq_pow_add_pow (x y : R) : (x + y) ^ p = x ^ p + y ^ p := by
   have h6 : ∑ i ∈ Ioo 0 p, x ^ i * y ^ (p - i) * Nat.choose p i = 0 :=
     calc
      _ =  ∑ i ∈ Ioo 0 p, x ^ i * y ^ (p - i) * 0 := by
-       sorry
-     _ = 0 := by sorry
+       have ...
+
+       simp
+     _ = 0 := by ring
   sorry
   done
 
