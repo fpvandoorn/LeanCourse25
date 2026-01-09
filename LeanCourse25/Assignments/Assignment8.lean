@@ -80,23 +80,56 @@ lemma mono_exercise_part3 (f : ℝ → ℝ) (hf : Continuous f) (h2f : Injective
     rw [strictMonoOn_dual_iff.symm] at this
     exact this
   sorry
-
+ 
 end
 
 
 /-! # Exercises to hand in -/
 
-example {X : Type*} [MetricSpace X] {x : X} : ⋂ i ∈ {s : Set X | IsOpen s ∧ x ∈ s }, i = {x} := by
+example {X : Type*} [MetricSpace X] {x : X} : ⋂ i ∈ {s : Set X |IsOpen s ∧ x ∈ s }, i = {x} := by
   sorry
   done
 
+#check intermediate_value_uIcc
 
 /- This is a copy of `mono_exercise_part1` above. See the comments there for more info. -/
 variable (α : Type*) [ConditionallyCompleteLinearOrder α]
   [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] in
 lemma mono_exercise_part1_copy {f : α → α} (hf : Continuous f) (h2f : Injective f) {a b x : α}
     (hab : a ≤ b) (h2ab : f a < f b) (hx : a ≤ x) : f a ≤ f x := by
-  sorry
+  by_contra h
+  have hfahxb: f a ∈ uIcc (f x) (f b) := by
+    rw [@mem_uIcc]
+    left
+    exact ⟨by order, by order ⟩ 
+  have hinter := intermediate_value_uIcc (f := f) (a := x) (b := b) (by fun_prop) 
+  grw [hinter] at hfahxb
+  simp at hfahxb
+  obtain ⟨y, hy, hy'⟩  := hfahxb
+  rw [mem_uIcc] at hy
+  unfold Injective at h2f
+  have hy' := h2f hy'
+  /-subst hy'
+  -/
+  obtain (hy| hy ):= hy
+  · obtain ⟨hxy, hby⟩ := hy
+    have hyx : y=x := by
+      order
+    rw[hy'] at hyx
+    rw [hyx] at h
+    push_neg at h
+    exact (lt_self_iff_false (f x)).mp h
+  · obtain ⟨hxy, hby⟩ := hy
+    rw [hy'] at hxy
+
+    rw[(LE.le.ge_iff_eq' hab)] at hxy
+    rw[hxy] at h2ab 
+    exact (lt_self_iff_false (f a)).mp h2ab
+    
+    
+
+/-f is injective, continuous, a ≤ x, b, f(a)< f(b), f(x)> f(a), 
+there exist c in [b,x] s.t. f(c)=f(a) continuous, By injective, c = a.-/
   done
 
 example (x y : ℝ) :

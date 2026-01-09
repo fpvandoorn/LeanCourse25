@@ -102,6 +102,14 @@ end Ring
 
 section conjugate
 
+example {x y : ℝ} : ¬ y ≤ x → x ≠ y := by
+ contrapose
+ push_neg
+ intro x
+ rw [x] 
+ 
+
+
 /- Define the conjugate of a subgroup, as the elements of the form `xhx⁻¹` for `h ∈ H`. -/
 def conjugate (x : G) (H : Subgroup G) : Subgroup G := sorry
 

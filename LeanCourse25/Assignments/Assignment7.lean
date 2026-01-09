@@ -218,7 +218,24 @@ lemma orbitOf_eq_iff (x y : X) : orbitOf G x = orbitOf G y ↔ y ∈ orbitOf G x
 
 /- Define the stabilizer of an element `x` as the subgroup of elements
 `g ∈ G` that satisfy `g • x = x`. -/
-def stabilizerOf (x : X) : Subgroup G := sorry
+def stabilizerOf (x : X) : Subgroup G where
+  carrier := { g : G | g • x = x }
+  one_mem' := by
+    simp      -- 1 • x = x
+  mul_mem' := by
+    intro g h hg hh
+    -- want: (g * h) • x = x
+    -- compute
+    calc
+      (g * h) • x = g • (h • x) := by simp [smul_smul]
+      _ = g • x                 := by simpa using congrArg (fun y => g • y) hh
+      _ = x                     := by simpa using hg
+  inv_mem' := by
+    intro g hg
+    -- want: g⁻¹ • x = x
+    -- apply g to both sides of hg
+    simp at *
+    exact inv_smul_eq_iff.mpr (id (Eq.symm hg))
 
 -- This is a lemma that allows `simp` to simplify `x ≈ y` in the proof below.
 @[simp] theorem leftRel_iff {x y : G} {s : Subgroup G} :
@@ -227,15 +244,55 @@ def stabilizerOf (x : X) : Subgroup G := sorry
 
 /- Let's prove the orbit-stabilizer theorem.
 
+structure o where 
+ x : X
+ hx : x ∈ range (fun g : G ↦ g • x)
+
 Hint: Only define the forward map (as a separate definition),
 and use `Equiv.ofBijective` to get an equivalence.
 (Note that we are coercing `orbitOf G x` to a (sub)type in the right-hand side) -/
 def orbit_stabilizer_theorem (x : X) : G ⧸ stabilizerOf G x ≃ orbitOf G x := by
-  sorry
+  apply Equiv.ofBijective (
+    Quotient.lift (fun g: G↦ (⟨ g • x, by simp [orbitOf] ⟩:orbitOf G x ))
+    (by 
+      intro a b hab
+      rw [leftRel_iff] at hab
+      simp at ⊢ hab
+      unfold stabilizerOf at hab
+      rw [@smul_eq_iff_eq_inv_smul]
+      rw [@smul_smul]
+      rw [hab]
+    ))
+  unfold Bijective
+  constructor 
+  · unfold Injective
+    apply Quotient.ind
+    intro a
+    apply Quotient.ind
+    intro b hab
+    simp at *
+    rw [@QuotientGroup.leftRel_apply]
+    unfold stabilizerOf
+    simp
+    rw [@mul_smul] 
+    rw [@inv_smul_eq_iff]
+    exact id (Eq.symm hab)
+  · unfold Surjective
+    intro b 
+    obtain ⟨b, hb ⟩ := b
+    unfold orbitOf at hb
+    simp at hb
+    obtain ⟨ y, hy ⟩ := hb
+    use ⟦y⟧
+    simp 
+    exact hy
   done
 
 
 end GroupActions
+
+
+#check Quotient.lift
 
 section tendsto
 
