@@ -2,12 +2,12 @@
 
 * Lecture 1: introduction, first proof
 * Lecture 2: `rw`, `apply`, `=`, `\to`
-* Lecture 3: `\forall`, `\and` (perhaps longer); `\exists`, `\or`, `\not`
-* Lecture 4: classical logic (`by_contra`, `by_cases`, `push_neg`, `contrapose`), `ext` (for functions), `fin_cases` and `simp` (briefly); finding lemmas (including `rw??`), `\le` and `gcongr`
+* Lecture 3: `\forall`, `\and` `\exists`, `\or`, `\not`
+* Lecture 4: classical logic (`by_contra`, `by_cases`, `push_neg`, `contrapose`), `ext` (for functions), `fin_cases` and `simp`; finding lemmas (including `rw??`), `\le` and `gcongr`
 * Lecture 5: `gcongr` (continued), `congr`, `grw`, `order`, sets (until big operations)
 * Lecture 6: finish sets, numbers, coercions, induction, recursion, big operations
-* Lecture 7: structures, classes (one thing to mention in the recap that I forgot to mention: divisibility is written using \|, not |)
-* Lecture 8: universes, coercions again (hint for next week), additive and multiplication classes, subtypes (avoid if possible), avoid partial functions, equivalence relations
+* Lecture 7: structures, classes
+* Lecture 8: universes, coercions again, additive and multiplication classes, subtypes, avoid partial functions, equivalence relations
 * Lecture 9: git, GitHub, project I, axiom of choice
 * Lecture 10: define notation, finiteness (excluding big operators), `Fin`, counting arguments
 * Lecture 11: group theory
