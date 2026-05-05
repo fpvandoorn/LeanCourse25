@@ -8,10 +8,10 @@
 * Lecture 6: finish sets, numbers, coercions, induction, recursion, big operations
 * Lecture 7: structures, classes
 * Lecture 8: universes, coercions again, additive and multiplication classes, subtypes, avoid partial functions, equivalence relations
-* Lecture 9: git, GitHub, project I, axiom of choice
+* Lecture 9: (git, GitHub, project I), axiom of choice
 * Lecture 10: define notation, finiteness (excluding big operators), `Fin`, counting arguments
 * Lecture 11: group theory
-* Lecture 12: ring theory, project II
+* Lecture 12: ring theory (project II)
 * Lecture 13: group actions (as simpler case of scalar multiplication); linear algebra
 * Lecture 14: filters
 * Lecture 15: topology, metric spaces, `fun_prop`. teaching evaluations (10min in the end)
